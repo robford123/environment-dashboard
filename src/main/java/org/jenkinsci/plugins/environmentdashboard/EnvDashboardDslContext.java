@@ -8,6 +8,7 @@ import java.util.ArrayList;
  */
 public class EnvDashboardDslContext implements Context {
     String nameOfEnv = "";
+    String branchName = "";
     String componentName = "";
     String buildNumber = "";
     String buildJob = "";
@@ -17,6 +18,10 @@ public class EnvDashboardDslContext implements Context {
 
     public void environmentName(String value) {
         nameOfEnv = value;
+    }
+
+    public void branchName(String value) {
+        branchName = value;
     }
 
     public void componentName(String value) {

@@ -21,6 +21,20 @@
   animation:         deploying 2s infinite; /* IE 10+ */
 }
 
-#side-panel { display: none; }
+#main-panel { margin-left: 0px; !important }
 
-#main-panel { width: 100%; margin-left: 0px; }
+.envCol {
+    float:left;
+    width:50%
+}
+
+.envRow {
+    margin-left : 0;
+    margin-right : 0;
+}
+
+.envRow:after {
+    content:"";
+    display:table;
+    clear:both;
+}

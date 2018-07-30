@@ -30,7 +30,7 @@ public class EnvDashboardDslContextExtension extends ContextExtensionPoint {
     public Object environmentDashboard(Runnable closure) {
         EnvDashboardDslContext context = new EnvDashboardDslContext();
         executeInContext(closure, context);
-        return new DashboardBuilder(context.nameOfEnv, context.componentName, context.buildNumber,
+        return new DashboardBuilder(context.nameOfEnv, context.branchName, context.componentName, context.buildNumber,
                 context.buildJob, context.packageName, context.addColumns, context.data);
     }
 
@@ -44,7 +44,7 @@ public class EnvDashboardDslContextExtension extends ContextExtensionPoint {
     @DslExtensionMethod(context = WrapperContext.class)
     public Object environmentDashboard() {
         EnvDashboardDslContext context = new EnvDashboardDslContext();
-        return new DashboardBuilder(context.nameOfEnv, context.componentName, context.buildNumber,
+        return new DashboardBuilder(context.nameOfEnv, context.branchName, context.componentName, context.buildNumber,
                 context.buildJob, context.packageName, context.addColumns, context.data);
     }
 }

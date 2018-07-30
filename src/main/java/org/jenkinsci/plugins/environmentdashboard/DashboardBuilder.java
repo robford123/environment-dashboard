@@ -38,6 +38,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public class DashboardBuilder extends BuildWrapper {
 
 	private final String nameOfEnv;
+	private final String branchName;
 	private final String componentName;
 	private final String buildNumber;
 	private final String buildJob;
@@ -46,9 +47,10 @@ public class DashboardBuilder extends BuildWrapper {
 	public boolean addColumns = false;
 
 	@DataBoundConstructor
-	public DashboardBuilder(String nameOfEnv, String componentName, String buildNumber, String buildJob,
+	public DashboardBuilder(String nameOfEnv, String branchName, String componentName, String buildNumber, String buildJob,
 			String packageName, boolean addColumns, ArrayList<ListItem> data) {
 		this.nameOfEnv = nameOfEnv;
+		this.branchName = branchName;
 		this.componentName = componentName;
 		this.buildNumber = buildNumber;
 		this.buildJob = buildJob;
@@ -72,9 +74,9 @@ public class DashboardBuilder extends BuildWrapper {
 		return nameOfEnv;
 	}
 
-	public String getComponentName() {
-		return componentName;
-	}
+	public String getBranchName() { return branchName; }
+
+	public String getComponentName() { return componentName; }
 
 	public String getBuildNumber() {
 		return buildNumber;
@@ -101,6 +103,7 @@ public class DashboardBuilder extends BuildWrapper {
 				: getDescriptor().getNumberOfDays());
 		String passedBuildNumber = build.getEnvironment(listener).expand(buildNumber);
 		String passedEnvName = build.getEnvironment(listener).expand(nameOfEnv);
+		String passedBranchName = build.getEnvironment(listener).expand(branchName);
 		String passedCompName = build.getEnvironment(listener).expand(componentName);
 		String passedBuildJob = build.getEnvironment(listener).expand(buildJob);
 		String passedPackageName = build.getEnvironment(listener).expand(packageName);
@@ -113,13 +116,17 @@ public class DashboardBuilder extends BuildWrapper {
 		}
 		String returnComment = null;
 
+		if (passedBranchName == null) {
+			passedBranchName = "";
+		}
+
 		if (passedPackageName == null) {
 			passedPackageName = "";
 		}
 
-		if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$")
+		if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$") || passedBranchName.matches("^\\s*$")
 				|| passedCompName.matches("^\\s*$"))) {
-			returnComment = writeToDB(build, listener, passedEnvName, passedCompName, passedBuildNumber, "PRE",
+			returnComment = writeToDB(build, listener, passedEnvName, passedBranchName, passedCompName, passedBuildNumber, "PRE",
 					passedBuildJob, numberOfDays, passedPackageName, passedColumnData);
 			listener.getLogger().println("Pre-Build Update: " + returnComment);
 		} else {
@@ -132,6 +139,7 @@ public class DashboardBuilder extends BuildWrapper {
 					throws IOException, InterruptedException {
 				String passedBuildNumber = build.getEnvironment(listener).expand(buildNumber);
 				String passedEnvName = build.getEnvironment(listener).expand(nameOfEnv);
+				String passedBranchName = build.getEnvironment(listener).expand(branchName);
 				String passedCompName = build.getEnvironment(listener).expand(componentName);
 				String passedBuildJob = build.getEnvironment(listener).expand(buildJob);
 				String passedPackageName = build.getEnvironment(listener).expand(packageName);
@@ -147,16 +155,16 @@ public class DashboardBuilder extends BuildWrapper {
 				}
 
 				if (doDeploy.equals("true")) {
-					if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$")
+					if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$") || passedBranchName.matches("^\\s*$")
 							|| passedCompName.matches("^\\s*$"))) {
-						returnComment = writeToDB(build, listener, passedEnvName, passedCompName, passedBuildNumber,
+						returnComment = writeToDB(build, listener, passedEnvName, passedBranchName, passedCompName, passedBuildNumber,
 								"POST", passedBuildJob, numberOfDays, passedPackageName, passedColumnData);
 						listener.getLogger().println("Post-Build Update: " + returnComment);
 					}
 				} else {
-					if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$")
+					if (!(passedBuildNumber.matches("^\\s*$") || passedEnvName.matches("^\\s*$") || passedBranchName.matches("^\\s*$")
 							|| passedCompName.matches("^\\s*$"))) {
-						returnComment = writeToDB(build, listener, passedEnvName, passedCompName, passedBuildNumber,
+						returnComment = writeToDB(build, listener, passedEnvName, passedBranchName, passedCompName, passedBuildNumber,
 								"NODEPLOY", passedBuildJob, numberOfDays, passedPackageName, passedColumnData);
 						listener.getLogger().println("Post-Build Update: " + returnComment);
 					}
@@ -170,12 +178,12 @@ public class DashboardBuilder extends BuildWrapper {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private String writeToDB(AbstractBuild build, BuildListener listener, String envName, String compName,
+	private String writeToDB(AbstractBuild build, BuildListener listener, String envName, String branchName, String compName,
 			String currentBuildNum, String runTime, String buildJob, Integer numberOfDays, String packageName,
 			List<ListItem> passedColumnData) {
 		String returnComment = null;
-		if (envName.matches("^\\s*$") || compName.matches("^\\s*$")) {
-			returnComment = "WARN: Either Environment name or Component name is empty.";
+		if (envName.matches("^\\s*$") || branchName.matches("^\\s*$") || compName.matches("^\\s*$")) {
+			returnComment = "WARN: Either Environment name or BranchName or Component name is empty.";
 			return returnComment;
 		}
 
@@ -191,13 +199,19 @@ public class DashboardBuilder extends BuildWrapper {
 		}
 		try {
 			stat.execute(
-					"CREATE TABLE IF NOT EXISTS env_dashboard (envComp VARCHAR(255), jobUrl VARCHAR(255), buildNum VARCHAR(255), buildStatus VARCHAR(255), envName VARCHAR(255), compName VARCHAR(255), created_at TIMESTAMP,  buildJobUrl VARCHAR(255), packageName VARCHAR(255));");
+					"CREATE TABLE IF NOT EXISTS env_dashboard (envComp VARCHAR(255), jobUrl VARCHAR(255), buildNum VARCHAR(255), buildStatus VARCHAR(255), envName VARCHAR(255), branchName VARCHAR(255), compName VARCHAR(255), created_at TIMESTAMP,  buildJobUrl VARCHAR(255), packageName VARCHAR(255));");
 		} catch (SQLException e) {
 			returnComment = "WARN: Could not create table env_dashboard.";
 			return returnComment;
 		}
 		try {
 			stat.execute("ALTER TABLE env_dashboard ADD IF NOT EXISTS packageName VARCHAR(255);");
+		} catch (SQLException e) {
+			returnComment = "WARN: Could not alter table env_dashboard.";
+			return returnComment;
+		}
+		try {
+			stat.execute("ALTER TABLE env_dashboard ADD IF NOT EXISTS branchName VARCHAR(255);");
 		} catch (SQLException e) {
 			returnComment = "WARN: Could not alter table env_dashboard.";
 			return returnComment;
@@ -214,7 +228,7 @@ public class DashboardBuilder extends BuildWrapper {
 				return returnComment;
 			}
 		}
-		String indexValueofTable = envName + '=' + compName;
+		String indexValueOfTable = envName + '=' + branchName + '=' + compName;
 		String currentBuildResult = "UNKNOWN";
 		if (build.getResult() == null && runTime.equals("PRE")) {
 			currentBuildResult = "RUNNING";
@@ -237,18 +251,18 @@ public class DashboardBuilder extends BuildWrapper {
 
 		String runQuery = null;
 		if (runTime.equals("PRE")) {
-			runQuery = "INSERT INTO env_dashboard (envComp, jobUrl, buildNum, buildStatus, envName, compName, created_at, buildJobUrl, packageName"
-					+ columns + ") VALUES( '" + indexValueofTable + "', '" + currentBuildUrl + "', '" + currentBuildNum
-					+ "', '" + currentBuildResult + "', '" + envName + "', '" + compName + "' , + current_timestamp, '"
+			runQuery = "INSERT INTO env_dashboard (envComp, jobUrl, buildNum, buildStatus, envName, branchName, compName, created_at, buildJobUrl, packageName"
+					+ columns + ") VALUES( '" + indexValueOfTable + "', '" + currentBuildUrl + "', '" + currentBuildNum
+					+ "', '" + currentBuildResult + "', '" + envName + "', '" + branchName + "', '" + compName + "' , + current_timestamp, '"
 					+ buildJobUrl + "' , '" + packageName + contents + "');";
 		} else {
 			if (runTime.equals("POST")) {
 				runQuery = "UPDATE env_dashboard SET buildStatus = '" + currentBuildResult
-						+ "', created_at = current_timestamp WHERE envComp = '" + indexValueofTable + "' AND joburl = '"
+						+ "', created_at = current_timestamp WHERE envComp = '" + indexValueOfTable + "' AND joburl = '"
 						+ currentBuildUrl + "';";
 			} else {
 				if (runTime.equals("NODEPLOY")) {
-					runQuery = "DELETE FROM env_dashboard where envComp = '" + indexValueofTable + "' AND joburl = '"
+					runQuery = "DELETE FROM env_dashboard where envComp = '" + indexValueOfTable + "' AND joburl = '"
 							+ currentBuildUrl + "';";
 				}
 			}
@@ -301,6 +315,12 @@ public class DashboardBuilder extends BuildWrapper {
 		public FormValidation doCheckNameOfEnv(@QueryParameter String value) throws IOException, ServletException {
 			if (value.length() == 0)
 				return FormValidation.error("Please set an Environment name.");
+			return FormValidation.ok();
+		}
+
+		public FormValidation doCheckBranchName(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set a Branch name.");
 			return FormValidation.ok();
 		}
 

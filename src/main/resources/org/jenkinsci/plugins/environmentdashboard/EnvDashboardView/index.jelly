@@ -1,7 +1,13 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form">
     <l:layout>
         <l:main-panel>
-            <p align="right"><a href="configure">Configure</a><st:nbsp/><st:nbsp/><st:nbsp/><a href="delete">Delete</a></p><br /><br />
+            <div class="envRow">
+                <div class="envCol"><h1>${it.getViewName()}</h1></div>
+                <div class="envCol">
+                    <p align="right"><a href="configure">Configure</a><st:nbsp/><st:nbsp/><st:nbsp/><a href="delete">Delete</a></p><br /><br />
+                </div>
+            </div>
             <st:include page="main.jelly"/>
             <j:if test="${h.hasPermission(app.ADMINISTER)}">
                 <f:form name="purge" method="post" action="purgeSubmit" tableClass="advancedLink">

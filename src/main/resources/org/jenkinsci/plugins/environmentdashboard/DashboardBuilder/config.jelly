@@ -4,6 +4,9 @@
         <f:entry title="Environment name" field="nameOfEnv">
             <f:textbox />
         </f:entry>
+        <f:entry title="Branch name" field="branchName">
+            <f:textbox />
+        </f:entry>
         <f:entry title="Component name" field="componentName">
             <f:textbox />
         </f:entry>

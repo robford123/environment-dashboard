@@ -42,18 +42,18 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  */
 public class EnvDashboardView extends View {
 
-	private String envOrder = null;
-
-	private String compOrder = null;
-
-	private String deployHistory = null;
+	private String envOrder;
+	private String compOrder;
+    private Boolean envXAxis;
+	private String deployHistory;
 
 	@DataBoundConstructor
-	public EnvDashboardView(final String name, final String envOrder, final String compOrder,
+	public EnvDashboardView(final String name, final String envOrder, final String compOrder, final Boolean envXAxis,
 			final String deployHistory) {
 		super(name, Hudson.getInstance());
 		this.envOrder = envOrder;
 		this.compOrder = compOrder;
+		this.envXAxis = envXAxis;
 		this.deployHistory = deployHistory;
 	}
 
@@ -62,8 +62,7 @@ public class EnvDashboardView extends View {
 	}
 
 	private static void ensureCorrectDBSchema() {
-		String returnComment = "";
-		Connection conn = null;
+		Connection conn;
 		Statement stat = null;
 		conn = DBConnection.getConnection();
 		try {
@@ -80,6 +79,14 @@ public class EnvDashboardView extends View {
 		} finally {
 			DBConnection.closeConnection();
 		}
+        try {
+            stat.execute("ALTER TABLE env_dashboard ADD IF NOT EXISTS branchName VARCHAR(255);");
+        } catch (SQLException e) {
+            System.out.println(
+                    "E14: Could not alter table to add branchName column to table env_dashboard.\n" + e.getMessage());
+        } finally {
+            DBConnection.closeConnection();
+        }
 		return;
 	}
 
@@ -93,8 +100,8 @@ public class EnvDashboardView extends View {
 			throws IOException, ServletException, FormException {
 		checkPermission(Jenkins.ADMINISTER);
 
-		Connection conn = null;
-		Statement stat = null;
+		Connection conn;
+		Statement stat;
 		conn = DBConnection.getConnection();
 		try {
 			assert conn != null;
@@ -118,6 +125,7 @@ public class EnvDashboardView extends View {
 
 		private String envOrder;
 		private String compOrder;
+		private Boolean envXAxis;
 		private String deployHistory;
 
 		/**
@@ -130,14 +138,14 @@ public class EnvDashboardView extends View {
 		}
 
 		public static ArrayList<String> getCustomColumns() {
-			Connection conn = null;
+			Connection conn;
 			Statement stat = null;
 			ArrayList<String> columns;
 			columns = new ArrayList<String>();
 			String queryString = "SELECT DISTINCT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='ENV_DASHBOARD';";
-			String[] fields = { "envComp", "compName", "envName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum",
+			String[] fields = { "envComp", "compName", "envName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "branchName",
 					"created_at", "packageName" };
-			boolean columnFound = false;
+			boolean columnFound;
 			try {
 				ResultSet rs = null;
 				conn = DBConnection.getConnection();
@@ -154,7 +162,7 @@ public class EnvDashboardView extends View {
 				} catch (SQLException e) {
 					System.out.println("E4" + e.getMessage());
 				}
-				String col = "";
+				String col;
 				while (rs.next()) {
 					columnFound = false;
 					col = rs.getString("COLUMN_NAME");
@@ -189,8 +197,8 @@ public class EnvDashboardView extends View {
 
 		@SuppressWarnings("unused")
 		public FormValidation doDropColumn(@QueryParameter("column") final String column) {
-			Connection conn = null;
-			Statement stat = null;
+			Connection conn;
+			Statement stat;
 			if ("".equals(column)) {
 				return FormValidation.ok();
 			}
@@ -231,6 +239,7 @@ public class EnvDashboardView extends View {
 		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
 			envOrder = formData.getString("envOrder");
 			compOrder = formData.getString("compOrder");
+			envXAxis = formData.getBoolean("envXAxis");
 			deployHistory = formData.getString("deployHistory");
 			save();
 			return super.configure(req, formData);
@@ -254,7 +263,7 @@ public class EnvDashboardView extends View {
 	}
 
 	public ResultSet runQuery(String queryString) {
-		Connection conn = null;
+		Connection conn;
 		Statement stat = null;
 
 		ResultSet rs = null;
@@ -374,7 +383,7 @@ public class EnvDashboardView extends View {
 	public HashMap getCompDeployed(String env, String time) {
 		HashMap<String, String> deployment;
 		deployment = new HashMap<String, String>();
-		String[] fields = { "buildstatus", "compName", "buildJobUrl", "jobUrl", "buildNum", "packageName" };
+		String[] fields = { "buildstatus","branchName", "compName", "buildJobUrl", "jobUrl", "buildNum", "packageName" };
 		String queryString = "select " + StringUtils.join(fields, ", ").replace(".$", "")
 				+ " from env_dashboard where envName = '" + env + "' and created_at = '" + time + "';";
 		try {
@@ -402,7 +411,7 @@ public class EnvDashboardView extends View {
 		ArrayList<HashMap<String, String>> deployments;
 		deployments = new ArrayList<HashMap<String, String>>();
 		HashMap<String, String> hash;
-		String[] fields = { "envName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "created_at",
+		String[] fields = { "envName", "branchName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "created_at",
 				"packageName" };
 		ArrayList<String> allDBFields = getCustomDBColumns();
 		for (String field : fields) {
@@ -434,7 +443,7 @@ public class EnvDashboardView extends View {
 		ArrayList<HashMap<String, String>> deployments;
 		deployments = new ArrayList<HashMap<String, String>>();
 		HashMap<String, String> hash;
-		String[] fields = { "envName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "created_at",
+		String[] fields = { "envName", "branchName", "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "created_at",
 				"packageName" };
 		ArrayList<String> allDBFields = getCustomDBColumns();
 		for (String field : fields) {
@@ -463,7 +472,7 @@ public class EnvDashboardView extends View {
 	public HashMap getCompLastDeployed(String env, String comp) {
 		HashMap<String, String> deployment;
 		deployment = new HashMap<String, String>();
-		String[] fields = { "buildstatus", "buildJobUrl", "jobUrl", "buildNum", "created_at", "packageName" };
+		String[] fields = { "buildstatus", "branchName", "buildJobUrl", "jobUrl", "buildNum", "created_at", "packageName" };
 		ArrayList<String> allDBFields = getCustomDBColumns();
 		for (String field : fields) {
 			allDBFields.add(field);
@@ -508,6 +517,14 @@ public class EnvDashboardView extends View {
 
 	public void setCompOrder(final String compOrder) {
 		this.compOrder = compOrder;
+	}
+
+	public Boolean getEnvXAxis() {
+		return envXAxis;
+	}
+
+	public void setEnvXAxis(final Boolean envXAxis) {
+		this.envXAxis = envXAxis;
 	}
 
 	public String getDeployHistory() {
