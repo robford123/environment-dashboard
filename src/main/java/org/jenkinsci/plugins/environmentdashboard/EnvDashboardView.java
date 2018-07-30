@@ -45,15 +45,17 @@ public class EnvDashboardView extends View {
 	private String envOrder;
 	private String compOrder;
     private Boolean envXAxis;
+    private Boolean includeBranchName;
 	private String deployHistory;
 
 	@DataBoundConstructor
-	public EnvDashboardView(final String name, final String envOrder, final String compOrder, final Boolean envXAxis,
+	public EnvDashboardView(final String name, final String envOrder, final String compOrder, final Boolean envXAxis, final Boolean includeBranchName,
 			final String deployHistory) {
 		super(name, Hudson.getInstance());
 		this.envOrder = envOrder;
 		this.compOrder = compOrder;
 		this.envXAxis = envXAxis;
+		this.includeBranchName = includeBranchName;
 		this.deployHistory = deployHistory;
 	}
 
@@ -126,6 +128,7 @@ public class EnvDashboardView extends View {
 		private String envOrder;
 		private String compOrder;
 		private Boolean envXAxis;
+		private Boolean includeBranchName;
 		private String deployHistory;
 
 		/**
@@ -240,6 +243,7 @@ public class EnvDashboardView extends View {
 			envOrder = formData.getString("envOrder");
 			compOrder = formData.getString("compOrder");
 			envXAxis = formData.getBoolean("envXAxis");
+			includeBranchName = formData.getBoolean("includeBranchName");
 			deployHistory = formData.getString("deployHistory");
 			save();
 			return super.configure(req, formData);
@@ -525,6 +529,14 @@ public class EnvDashboardView extends View {
 
 	public void setEnvXAxis(final Boolean envXAxis) {
 		this.envXAxis = envXAxis;
+	}
+
+	public Boolean getIncludeBranchName() {
+		return includeBranchName;
+	}
+
+	public void setIncludeBranchName(final Boolean includeBranchName) {
+		this.includeBranchName = includeBranchName;
 	}
 
 	public String getDeployHistory() {

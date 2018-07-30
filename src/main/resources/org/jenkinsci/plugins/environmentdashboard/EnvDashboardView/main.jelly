@@ -578,6 +578,7 @@
                                             <td class="${clss}" style="background-color:${bgcol} padding 1.5% 1.5%;" align="center">
                                                 <a style="text-decoration:none; color:blue; font-size:medium;" title="View" href="javascript:toggle('${comps}_${env}_Popup');">
                                                     <strong>
+                                                        <j:if test="${it.getIncludeBranchName()}">${deployment.get("branchName")}<st:nbsp/>-<st:nbsp/></j:if>
                                                         <j:if test="${deployment.get('packageName').equals('') || deployment.get('packageName') == null}">${deployment.get('buildNum')}</j:if>
                                                         <j:if test="${!deployment.get('packageName').equals('') &amp;&amp; deployment.get('packageName') != null}">${deployment.get('packageName')}</j:if>
                                                         <j:switch on="${deployment.get('buildstatus')}">

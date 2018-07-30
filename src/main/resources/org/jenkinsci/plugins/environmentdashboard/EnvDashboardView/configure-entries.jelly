@@ -11,7 +11,11 @@
 
     <f:entry title="Environments along X axis" field="envXAxis">
             <f:checkbox default="true" />
-        </f:entry>
+    </f:entry>
+
+    <f:entry title="Include Branch name in matrix" field="includeBranchName">
+        <f:checkbox default="false" />
+    </f:entry>
 
     <f:entry title="Limit deploy history to last X deploys" field="deployHistory">
         <f:textbox default="10"/>
